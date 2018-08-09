@@ -9,9 +9,8 @@
 #import "ViewController.h"
 #import <CoreBluetooth/CoreBluetooth.h>
 
-@interface ViewController() <CBCentralManagerDelegate>
+@interface ViewController() 
 @property (weak) IBOutlet NSButton *startBtn;
-@property (nonatomic, strong) CBCentralManager *centralManager;
 
 @end
 
@@ -19,13 +18,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
     
-    
-}
-
-- (void)centralManagerDidUpdateState:(CBCentralManager *)central{
-    NSLog(@"state:%ld",central.state);
 }
 
 - (void)viewDidAppear{

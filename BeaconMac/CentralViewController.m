@@ -10,18 +10,16 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 
 
-// 蓝牙4.0设备名
-static NSString * const kBlePeripheralName = @"董小云的iPhone";
+// 蓝牙设备名
+static NSString * const kBlePeripheralName = @"BleTest";
 // 通知服务
-static NSString * const kNotifyServerUUID = @"FFE0";
-// 写服务
-static NSString * const kWriteServerUUID = @"FFE1";
+static NSString * const kNotifyServerUUID = @"FFF0";
 // 通知特征值
-static NSString * const kNotifyCharacteristicUUID = @"FFE2";
+static NSString * const kNotifyCharacteristicUUID = @"FFF1";
+// 写服务
+static NSString * const kWriteServerUUID = @"FFE0";
 // 写特征值
-static NSString * const kWriteCharacteristicUUID = @"FFE3";
-
-static NSString *const kBatteryUUID = @"180F";
+static NSString * const kWriteCharacteristicUUID = @"FFE1";
 
 @interface CentralViewController()<CBCentralManagerDelegate, CBPeripheralDelegate>
 @property (unsafe_unretained) IBOutlet NSTextView *textView;
@@ -49,7 +47,6 @@ static NSString *const kBatteryUUID = @"180F";
 }
 
 - (IBAction)clickStartBtn:(NSButton *)sender {
-    NSLog(@"扫描设备");
     [self showMessage:@"扫描设备"];
     if (self.peripheralState ==  CBManagerStatePoweredOn)
     {
@@ -62,7 +59,6 @@ static NSString *const kBatteryUUID = @"180F";
 - (IBAction)clickLinkBtn:(NSButton *)sender {
     if (self.cbPeripheral != nil)
     {
-        NSLog(@"连接设备");
         [self showMessage:@"连接设备"];
         [self.centralManager connectPeripheral:self.cbPeripheral options:nil];
     }
@@ -72,7 +68,6 @@ static NSString *const kBatteryUUID = @"180F";
     }
 }
 - (IBAction)clickClearBtn:(NSButton *)sender {
-    NSLog(@"清空设备");
     [self.peripherals removeAllObjects];
 
     [self showMessage:@"清空设备"];
@@ -80,7 +75,6 @@ static NSString *const kBatteryUUID = @"180F";
     if (self.cbPeripheral != nil)
     {
         // 取消连接
-        NSLog(@"取消连接");
         [self showMessage:@"取消连接"];
         [self.centralManager cancelPeripheralConnection:self.cbPeripheral];
     }
@@ -103,18 +97,15 @@ static NSString *const kBatteryUUID = @"180F";
     if (![self.peripherals containsObject:peripheral])
     {
         [self.peripherals addObject:peripheral];
-        NSLog(@"peripheral:%@",peripheral);
+    }
+    if ([peripheral.name isEqualToString:kBlePeripheralName])
+    {
+        [self showMessage:[NSString stringWithFormat:@"设备名:%@",peripheral.name]];
+        self.cbPeripheral = peripheral;
         
-        if ([peripheral.name isEqualToString:kBlePeripheralName])
-        {
-            [self showMessage:[NSString stringWithFormat:@"设备名:%@",peripheral.name]];
-            self.cbPeripheral = peripheral;
-            
-            [self showMessage:@"开始连接"];
-            [self.centralManager connectPeripheral:peripheral options:nil];
-            
-            [self.centralManager stopScan];
-        }
+        [self showMessage:@"开始连接"];
+        [self.centralManager connectPeripheral:peripheral options:nil];
+        [self.centralManager stopScan];
     }
 }
 
@@ -160,9 +151,6 @@ static NSString *const kBatteryUUID = @"180F";
  */
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral
 {
-    NSLog(@"连接设备:%@成功",peripheral.name);
-    
-    //    self.peripheralText.text = [NSString stringWithFormat:@"连接设备:%@成功",peripheral.name];
     [self showMessage:[NSString stringWithFormat:@"连接设备:%@成功",peripheral.name]];
     // 设置设备的代理
     peripheral.delegate = self;
@@ -181,19 +169,16 @@ static NSString *const kBatteryUUID = @"180F";
     // 遍历所有的服务
     for (CBService *service in peripheral.services)
     {
-        NSLog(@"服务:%@",service.UUID.UUIDString);
         // 获取对应的服务
-//        if ([service.UUID.UUIDString isEqualToString:kWriteServerUUID] || [service.UUID.UUIDString isEqualToString:kNotifyServerUUID])
-//        {
-//            // 根据服务去扫描特征
-//            [peripheral discoverCharacteristics:nil forService:service];
-//        }
-//        if ([service.UUID.UUIDString isEqualToString:@"1805"]) {
-//        if ([service.UUID.UUIDString isEqualToString:@"180A"]) {
-
-        if ([service.UUID.UUIDString isEqualToString:kBatteryUUID]) {
-//        if ([service.UUID.UUIDString isEqualToString:@"9FA480E0-4967-4542-9390-D343DC5D04AE"]) {
-//        if ([service.UUID.UUIDString isEqualToString:@"D0611E78-BBB4-4591-A5F8-487910AE4366"]) {
+        if ([service.UUID.UUIDString isEqualToString:kNotifyServerUUID])
+        {
+            [self showMessage:[NSString stringWithFormat:@"服务 %@ 扫描特征值",service.UUID.UUIDString]];
+            // 根据服务去扫描特征
+            [peripheral discoverCharacteristics:nil forService:service];
+        }
+        
+        if ([service.UUID.UUIDString isEqualToString:kWriteServerUUID]) {
+            [self showMessage:[NSString stringWithFormat:@"服务 %@ 扫描特征值",service.UUID.UUIDString]];
             [peripheral discoverCharacteristics:nil forService:service];
         }
     }
@@ -208,28 +193,21 @@ static NSString *const kBatteryUUID = @"180F";
  */
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error
 {
-    NSLog(@"特征值们:%@",service.characteristics);
+    [self showMessage:[NSString stringWithFormat:@"特征值们:%@",service.characteristics]];
     // 遍历所有的特征
     for (CBCharacteristic *characteristic in service.characteristics)
     {
-        NSLog(@"特征值:%@",characteristic);
-        [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-        
-        if ([characteristic.UUID.UUIDString isEqualToString:kWriteCharacteristicUUID])
-        {
-            // 写入数据
-            [self showMessage:@"写入特征值"];
-            for (Byte i = 0x0; i < 0x73; i++)
-            {
-                Byte byte[] = {0xf0, 0x3d, 0x3d, i,
-                    0x02,0xf7};
-                NSData *data = [NSData dataWithBytes:byte length:6];
-                [peripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithResponse];
-            }
-        }
         if ([characteristic.UUID.UUIDString isEqualToString:kNotifyCharacteristicUUID])
         {
+            [self showMessage:@"设置通知特征值"];
             [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+        }
+        if ([characteristic.UUID.UUIDString isEqualToString:kWriteCharacteristicUUID]) {
+            [self showMessage:@"设置写特征值"];
+            Byte byte[] = {'A','B','C','D','E','F'};
+//            Byte byte[] = {0xf0, 0x3d, 0x3d, 0x01,0x02,0xf7};
+            NSData *data = [NSData dataWithBytes:byte length:6];
+            [peripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithResponse];
         }
     }
 }
@@ -246,15 +224,26 @@ static NSString *const kBatteryUUID = @"180F";
     if ([characteristic.UUID.UUIDString isEqualToString:kNotifyCharacteristicUUID])
     {
         NSData *data = characteristic.value;
-        NSLog(@"%@",data);
+        NSString *str = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        [self showMessage:str];
     }
 }
+
+- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error{
+    if (error) {
+        [self showMessage:[NSString stringWithFormat:@"didWriteValueForCharacteristic,error:%@",error]];
+    }else{
+        [self showMessage:[NSString stringWithFormat:@"didWriteValueForCharacteristic 写入成功:%@",characteristic]];
+    }
+}
+
 #pragma mark - CBCentralManagerDelegate
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central{
+    [self showMessage:[NSString stringWithFormat:@"蓝牙状态:%ld",(long)central.state]];
     switch (central.state) {
         case CBManagerStateUnknown:{
-            NSLog(@"为知状态");
+            NSLog(@"未知状态");
             self.peripheralState = central.state;
         }
             break;
@@ -299,6 +288,7 @@ static NSString *const kBatteryUUID = @"180F";
 #pragma mark - private method
 - (void)showMessage:(NSString *)message
 {
+    NSLog(@"%@",message);
     self.textView.string = [self.textView.string stringByAppendingFormat:@"%@\n",message];
     [self.textView scrollRectToVisible:NSMakeRect(0, self.textView.textContainer.size.height -15, self.textView.textContainer.size.width, 10)];
 }
@@ -311,135 +301,4 @@ static NSString *const kBatteryUUID = @"180F";
 }
 
 @end
-//
-//@interface CentralViewController()<CBCentralManagerDelegate, CBPeripheralDelegate,CBPeripheralManagerDelegate> {
-//    NSMutableArray *_peripheralsList;
-//}
-//@property (unsafe_unretained) IBOutlet NSTextView *textView;
-//
-//@property (nonatomic, strong) CBCentralManager *centralManager;
-//@property (nonatomic, strong) CBPeripheral *currentPeripheral;
-//@property (nonatomic, strong) NSArray<CBPeripheral *> *peripherals;
-//
-//@end
-//
-//@implementation CentralViewController
-//
-//- (void)viewDidLoad{
-//    [super viewDidLoad];
-//    self.centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil options:nil];
-//}
-//
-//#pragma mark - CBCentralManagerDelegate
-//
-//// 在 cetral 的状态变为 CBManagerStatePoweredOn 的时候开始扫描
-//- (void)centralManagerDidUpdateState:(CBCentralManager *)central {
-//    if (central.state == CBCentralManagerStatePoweredOn) {
-//        [_centralManager scanForPeripheralsWithServices:nil options:nil];
-//    }
-//    NSLog(@"state:%ld",central.state);
-//}
-//
-//- (void)centralManager:(CBCentralManager *)central
-// didDiscoverPeripheral:(CBPeripheral *)peripheral
-//     advertisementData:(NSDictionary<NSString *, id> *)advertisementData RSSI:(NSNumber *)RSSI {
-//
-//    if (!peripheral.name) return; // Ingore name is nil peripheral.
-//    if (![_peripheralsList containsObject:peripheral]) {
-//        [_peripheralsList addObject:peripheral];
-//        _peripherals = _peripheralsList.copy;
-//    }
-//
-//    // 在某个地方停止扫描并连接至周边设备
-//    [_centralManager stopScan];
-//    [_centralManager connectPeripheral:peripheral options:nil];
-//}
-//
-//- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
-//
-//    peripheral.delegate = self;
-//
-//    //     Client to do discover services method...
-//    CBUUID *seriveUUID = [CBUUID UUIDWithString:@"d2009d00-6000-1000-8000-000000000000"];
-//    [peripheral discoverServices:@[seriveUUID]];
-//}
-//
-//- (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-//
-//}
-//
-//- (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-//
-//}
-//
-//#pragma mark - CBPeripheralManagerDelegate
-//
-//- (void)peripheralManagerDidUpdateState:(CBPeripheralManager *)peripheral {
-//
-//}
-//
-//
-//#pragma mark - CBPeripheralDelegate
-//
-//// 发现服务
-//- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(nullable NSError *)error {
-//    NSArray *services = peripheral.services;
-//    if (services) {
-//        CBService *service = services[0];
-//        CBUUID *writeUUID = [CBUUID UUIDWithString:@"D2009D01-6000-1000-8000-000000000000"];
-//        CBUUID *notifyUUID = [CBUUID UUIDWithString:@"D2009D02-6000-1000-8000-000000000000"];
-//        __unused CBUUID *unusedUUID = [CBUUID UUIDWithString:@"D2009D02-6000-1000-8000-000000000001"];
-//
-//        [peripheral discoverCharacteristics:@[writeUUID, notifyUUID] forService:service]; // 发现服务
-//    }
-//}
-//
-//// 发现特性值
-//- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(nullable NSError *)error {
-//    if (!error) {
-//        NSArray *characteristicArray = service.characteristics;
-//        CBCharacteristic *writeCharacteristic = characteristicArray[0];
-//        CBCharacteristic *notifyCharacteristic = characteristicArray[1];
-//
-//        // 通知使能， `YES` enable notification only, `NO` disabel notifications and indications
-//        [peripheral setNotifyValue:YES forCharacteristic:notifyCharacteristic];
-//        [peripheral writeValue:[NSData data] forCharacteristic:writeCharacteristic type:CBCharacteristicWriteWithResponse];
-//    } else {
-//        NSLog(@"Discover charactertics Error : %@", error);
-//    }
-//}
-//
-//// 写入成功
-//- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(nullable NSError *)error {
-//    if (!error) {
-//        NSLog(@"Write Success");
-//    } else {
-//        NSLog(@"WriteVale Error = %@", error);
-//    }
-//}
-//
-//// 回复
-//- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
-//    if (error) {
-//        NSLog(@"update value error: %@", error);
-//    } else {
-//        __unused NSData *responseData = characteristic.value;
-//    }
-//}
-//
-//- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForDescriptor:(CBDescriptor *)descriptor error:(NSError *)error {
-//
-//}
-//
-//- (void)peripheralDidUpdateName:(CBPeripheral *)peripheral {
-//
-//}
-//
-//- (void)peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error {
-//
-//}
-//
-//- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
-//
-//}
-//@end
+

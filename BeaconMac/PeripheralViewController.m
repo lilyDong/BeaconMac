@@ -9,8 +9,8 @@
 #import "PeripheralViewController.h"
 #import <CoreBluetooth/CoreBluetooth.h>
 
-static NSString *const ServiceUUID1 =  @"FFF0";
-static NSString *const notiyCharacteristicUUID =  @"FFF1";
+static NSString *const ServiceUUID1 = @"883D7271-8BDF-44AD-85E0-42382AEBB5E5";// @"FFF0";
+static NSString *const notiyCharacteristicUUID =  @"883D7271-8BDF-44AD-85E0-42382AEBB5E5";
 static NSString *const ServiceUUID2 =  @"FFE0";
 static NSString *const readwriteCharacteristicUUID =  @"FFE1";
 static NSString *const LocalNameKey =  @"BleTest";
